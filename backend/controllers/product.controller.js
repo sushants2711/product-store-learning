@@ -46,7 +46,7 @@ export const addProductControllers = async (req, res) => {
         } catch (cloudinaryError) {
             // Clean up the temporary file if Cloudinary upload fails
             await fs.unlink(filePath);
-            throw cloudinaryError;
+            return res.status(500).json({ success: false, message: "Cloudinary Error", cloudinaryError})
         }
     } catch (error) {
         return res.status(500).json({
@@ -101,6 +101,65 @@ export const deleteById = async (req, res) => {
                     error
                 })
         }
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Internal Server error" })
+    }
+}
+
+export const updateProduct = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const product = req.body;
+
+        if (!id) {
+            return res.status(400).json({ success: false, message: "Id is required" })
+        }
+
+        const productExist = await productModel.findById({ _id: id });
+        if (!productExist) {
+            return res.status(400).json({ success: false, message: "Product Id is required" })
+        }
+
+        if (req.file) {
+            try {
+                const filePath = req.file.path;
+                const uploadResult = await cloudinary.uploader.upload(filePath, {
+                    resource_type: "image",
+                    folder: "products",
+                    quality: "auto:low",
+                });
+
+                // Add the new image URL to the update object
+                product.image = uploadResult.secure_url;
+
+                // Clean up the temporary file
+                await fs.unlink(filePath);
+
+                // Delete the old image from Cloudinary
+                const oldImageUrl = productExist.image;
+                const publicId = oldImageUrl.split('/').slice(-2).join('/').split('.')[0];
+                await cloudinary.uploader.destroy(publicId);
+
+            } catch (cloudinaryError) {
+                return res.status(500).json({
+                    success: false,
+                    message: "Image upload failed",
+                    error: cloudinaryError,
+                });
+            }
+        }
+        
+        const updatedProducts = await productModel.findByIdAndUpdate(id, product, {
+            new: true
+        })
+
+        return res
+            .status(200)
+            .json({
+                success: true,
+                message: "Product updated successfull",
+                updatedProducts
+            })
     } catch (error) {
         return res.status(500).json({ success: false, message: "Internal Server error" })
     }
