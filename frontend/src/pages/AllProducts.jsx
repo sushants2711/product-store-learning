@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { Box } from "../components/Box"
 import { handleError } from "../toastuse";
+import { AddProductPage } from "./AddProductPage";
 
 export const AllProducts = () => {
 
@@ -30,7 +31,7 @@ export const AllProducts = () => {
 
   useEffect(() => {
     fetchProduct()
-  }, [])
+  }, [AddProductPage])
 
   useEffect(() => {
     document.title = "AllProducts"

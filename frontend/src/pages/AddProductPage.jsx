@@ -12,7 +12,7 @@ export const AddProductPage = () => {
   const [addProduct, setAddProducts] = useState({
     name: "",
     price: "",
-    image: null
+    image: ""
   })
 
   // logic for dynamic handling the form 
@@ -25,66 +25,59 @@ export const AddProductPage = () => {
     })
   }
 
-   // Logic for handling file input through frontend
+   //Logic for handling file input through frontend
    const handleFileChange = (e) => {
     const file = e.target.files[0];
     setAddProducts({
       ...addProduct,
-      image: file,
+      image: file, 
     });
   };
+  
 
   // logic for form submission 
   const handleFormSubmission = async (e) => {
-
     e.preventDefault();
     const { name, price, image } = addProduct;
+  
     if (!name || !price || !image) {
-      handleError("All fields are required")
+      handleError("All fields are required");
+      return;
     }
-
+  
     try {
-      const url = "http://localhost:8000/api/add-product"
-      
-      const resposnse = await fetch(url, {
-        method: "POST",
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(addProduct)
-      })
-
-      const result = await resposnse.json();
+      const url = "http://localhost:8000/api/add-product";
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('price', price);
+      formData.append('image', image); 
+  
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData,
+      });
+  
+      const result = await response.json();
       console.log(result);
-
-      const { success, message, error, cloudinaryError } = result;
-
+  
+      const { success, message, error } = result;
+  
       if (success) {
-        handleSuccess(message)
-        setAddProducts({
-          name: "",
-          price: "",
-          image: null
-        });
-
-      } else if (!success) {
-        handleError(message)
-
-      } else if (error) {
-        handleError(error)
-
+        handleSuccess(message);
+        setAddProducts({ name: "", price: "", image: null });
       } else {
-        handleError(cloudinaryError)
+        handleError(message || 'Failed to add product');
       }
     } catch (error) {
-      handleError(error)
+      handleError('An error occurred while submitting the form');
     }
-  }
+  };
+  
 
 
   return (
     <>
-      <Form  addProductValue={addProduct} valueChange={handleChange} formSubmission={handleFormSubmission} fileChange={handleFileChange}/>
+      <Form  addProductValue={addProduct} valueChange={handleChange} formSubmission={handleFormSubmission} filechange={handleFileChange}/>
     </>
   )
 }
